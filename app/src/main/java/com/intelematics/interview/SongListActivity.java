@@ -2,18 +2,18 @@ package com.intelematics.interview;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import com.intelematics.interview.adapters.SongListArrayAdapter;
 import com.intelematics.interview.db.DBManager;
+import com.intelematics.interview.di.Injector;
 import com.intelematics.interview.models.Song;
+import com.intelematics.interview.presenter.Mvp;
+import com.intelematics.interview.presenter.SongListPresenter;
 import com.intelematics.interview.tasks.DownloadSongListTask;
-import com.intelematics.interview.tasks.ReadDBSongListTask;
 
 import android.os.Bundle;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
-import android.content.DialogInterface;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.ContextMenu;
@@ -26,12 +26,10 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 
-/**
- *
- */
-public class SongListActivity extends Activity {
-	private DBManager dbManager;
-	
+import javax.inject.Inject;
+
+public class SongListActivity extends Activity implements Mvp.View {
+
 	private View headerView;
 	private ListView listView;
 	private SongListArrayAdapter listAdapter;
@@ -40,24 +38,32 @@ public class SongListActivity extends Activity {
 	private ProgressDialog loadDialog;
 	
 	private EditText searchBox;
+
+	@Inject
+	DBManager dbManager;
+
+	@Inject
+	SongListPresenter presenter;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_song_list);
 
-		dbManager = new DBManager(this);
-		
+		Injector.get().inject(this);
+
+		presenter.setView(this);
+
 		headerView = getLayoutInflater().inflate(R.layout.song_list_header, null, true);
 		
-		songList = new ArrayList<Song>();
-		listView = (ListView) findViewById(R.id.list_view);
+		songList = new ArrayList<>();
+		listView = findViewById(R.id.list_view);
 		listAdapter = new SongListArrayAdapter(this, songList, dbManager);
 		listView.addHeaderView(headerView);
 		listView.setAdapter(listAdapter);
 		registerForContextMenu(listView);
 		
-		searchBox = (EditText)findViewById(R.id.search_box);
+		searchBox = findViewById(R.id.search_box);
 		searchBox.addTextChangedListener(new TextWatcher() {
         @Override
         public void onTextChanged(CharSequence sequence, int arg1, int arg2, int arg3) {
@@ -86,33 +92,11 @@ public class SongListActivity extends Activity {
 	public void displaySelectionDialog(){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage("Do you wish to load the local copy?")
-               .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                   public void onClick(DialogInterface dialog, int id) {
-                	   retrieveSongListFromDB();
-                   }
-               })
-               .setNegativeButton("Download", new DialogInterface.OnClickListener() {
-                   public void onClick(DialogInterface dialog, int id) {
-                	   retrieveSongList();
-                   }
-               });
+               .setPositiveButton("Yes", (dialog, id) -> presenter.retrieveSongListFromDB())
+               .setNegativeButton("Download", (dialog, id) -> presenter.retrieveSongList());
 
 		AlertDialog dialog = builder.create();
 		dialog.show();
-	}
-	
-	public void retrieveSongList(){
-		loadDialog = ProgressDialog.show(this, "", "Loading. Please wait...", true, true);
-		listAdapter.clear();
-		DownloadSongListTask fetchTask = new DownloadSongListTask(this, dbManager);
-		fetchTask.execute();
-	}
-	
-	public void retrieveSongListFromDB(){
-		loadDialog = ProgressDialog.show(this, "", "Loading. Please wait...", true, true);
-		listAdapter.clear();
-		ReadDBSongListTask fetchTask = new ReadDBSongListTask(this, dbManager);
-		fetchTask.execute();
 	}
 	
 	public void updateSongList(ArrayList<Song> list){
@@ -185,33 +169,23 @@ public class SongListActivity extends Activity {
 	}
 
 	public void sortListByArtist(){
-		Collections.sort(songList, new Comparator<Song>() {
-		    public int compare(Song song0, Song song1) {
-		        return song0.getArtist().compareTo(song1.getArtist());
-		    }
-		});
+		Collections.sort(songList, (song0, song1) -> song0.getArtist().compareTo(song1.getArtist()));
 		listAdapter.updateList(songList, searchBox.getText());
 	}
 	
 	public void sortListByTitle(){
-		Collections.sort(songList, new Comparator<Song>() {
-		    public int compare(Song song0, Song song1) {
-		        return song0.getTitle().compareTo(song1.getTitle());
-		    }
-		});
+		Collections.sort(songList, (song0, song1) -> song0.getTitle().compareTo(song1.getTitle()));
 		listAdapter.updateList(songList, searchBox.getText());
 	}
 	
 	public void sortListByPrice(){
-		Collections.sort(songList, new Comparator<Song>() {
-		    public int compare(Song song0, Song song1) {
-		    	int priceCompare = ((Double)song0.getPrice()).compareTo((Double)song1.getPrice());
-		    	if(priceCompare != 0){
-		    		return priceCompare;
-		    	} else{
-		    		return song0.getTitle().compareTo(song1.getTitle());
-		    	}
-		    }
+		Collections.sort(songList, (song0, song1) -> {
+			int priceCompare = ((Double)song0.getPrice()).compareTo((Double)song1.getPrice());
+			if(priceCompare != 0){
+				return priceCompare;
+			} else{
+				return song0.getTitle().compareTo(song1.getTitle());
+			}
 		});
 		listAdapter.updateList(songList, searchBox.getText());
 	}
@@ -221,5 +195,19 @@ public class SongListActivity extends Activity {
 		listAdapter.updateList(songList, searchBox.getText());
 	}
 
-	
+
+	@Override
+	public void showLoadingDialog() {
+		loadDialog = ProgressDialog.show(this, "", "Loading. Please wait...", true, true);
+	}
+
+	@Override
+	public void clearAdapter() {
+		listAdapter.clear();
+	}
+
+	@Override
+	public SongListActivity getContext() {
+		return this;
+	}
 }

@@ -5,10 +5,7 @@ import android.graphics.Bitmap;
 import java.io.Serializable;
 
 
-/**
- *
- */
-public class Song implements Serializable{
+public class Song implements Serializable {
 	private long id;
 	private String coverURL;
 	private String artist;
@@ -16,8 +13,7 @@ public class Song implements Serializable{
 	private double price;
 	
 	private Bitmap cover;
-	
-		
+
 	public Song() {
 	}
 	

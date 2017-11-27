@@ -7,9 +7,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 
-/**
- *
- */
 public class DBManager extends SQLiteOpenHelper{
 	private static final String DB_NAME = "songCatalogue";
 	private static final int DB_VERSION = 1;
@@ -39,11 +36,12 @@ public class DBManager extends SQLiteOpenHelper{
 		onCreate(db);
 	}
 	
-	public void openDB(SQLiteDatabase db){
+	public SQLiteDatabase openDB(SQLiteDatabase db){
 		if (!db.isOpen()) {
 		    db = context.openOrCreateDatabase(context.getString(R.string.sql_db_directory), 
 		    		SQLiteDatabase.OPEN_READWRITE, null);
-		 }
+		}
+		return db;
 	}
 
 }

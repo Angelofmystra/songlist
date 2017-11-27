@@ -24,7 +24,7 @@ public class DownloadSongListTask extends AsyncTask<Void, Void, Void> {
 	public DownloadSongListTask(SongListActivity activity, DBManager dbManager) {
 		this.activity = activity;
 		this.dbManager = dbManager;
-		songList = new ArrayList<Song>();
+		songList = new ArrayList<>();
 	}
 	
 	@Override
@@ -32,7 +32,7 @@ public class DownloadSongListTask extends AsyncTask<Void, Void, Void> {
 		JsonParser parser = new JsonParser();
 
         // Rock version of the app
-        connectionManager = new ConnectionManager(activity, "https://itunes.apple.com/search?term=rock&amp;media=music&amp;entity=song&amp;limit=50");
+        connectionManager = new ConnectionManager("https://itunes.apple.com/search?term=rock&amp;media=music&amp;entity=song&amp;limit=50");
 
         // Pop version of the app
         //connectionManager = new ConnectionManager(activity, https://itunes.apple.com/search?term=popk&amp;media=music&amp;entity=song&amp;limit=50);
